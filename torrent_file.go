@@ -11,7 +11,7 @@ import (
 // Structure of parsed torrent file
 // Almost all fields is obvious (InfoHash is sha1 of encoded `info` part of torrent file)
 type TorrentFile struct {
-	LocalFilePath string ``
+	LocalFilePath string
 	Announce      string
 	InfoHash      [20]byte
 	Length        int64
@@ -36,10 +36,10 @@ func (t *TorrentFile) parseTorrentFile() error {
 		return err
 	}
 
-	t.Announce = result["announce"].(string) // How does it work?
+	t.Announce = result["announce"].(string)
 	t.InfoHash = sha1.Sum(bencode.Encode(result["info"]))
 	t.Length = result["info"].(map[string]interface{})["length"].(int64)
-	t.Name = result["info"].(map[string]interface{})["name"].(string) // Why I have to do it?
+	t.Name = result["info"].(map[string]interface{})["name"].(string)
 
 	return nil
 }

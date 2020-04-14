@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 func main() {
 	path := "torrent_files/debian.torrent"
@@ -9,5 +12,12 @@ func main() {
 		fmt.Print(err)
 	} else {
 		fmt.Println(t)
+		client, err := CreateClient(t)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = client.makeRequest()
+		fmt.Println("Stop")
 	}
 }
