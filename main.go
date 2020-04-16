@@ -17,7 +17,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = client.makeRequest()
-		fmt.Println("Stop")
+		tracker, err := client.makeRequest()
+		fmt.Println(tracker)
 	}
 }

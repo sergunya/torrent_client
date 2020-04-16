@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/marksamman/bencode"
 )
 
 type TorrentClient struct {
@@ -46,14 +48,29 @@ func (t *TorrentClient) buildURL() error {
 	return nil
 }
 
-func (t *TorrentClient) makeRequest() error {
+func (t *TorrentClient) makeRequest() (Tracker, error) {
 	resp, err := http.Get(t.URL)
 	if err != nil {
 		log.Fatal("cannot build url")
 	}
 
-	fmt.Println(resp)
-	return nil
+	decodedBody, err := bencode.Decode(resp.Body)
+	if err != nil {
+		log.Fatal("cannot decode response body")
+	}
+
+	peers, err := DecodePeerInfo([]byte(decodedBody["peers"].(string)))
+
+	if err != nil {
+		return Tracker{}, err
+	}
+
+	tracker := Tracker{
+		Interval: decodedBody["interval"].(int64),
+		Peers:    peers,
+	}
+
+	return tracker, nil
 }
 
 func CreateClient(t TorrentFile) (TorrentClient, error) {
