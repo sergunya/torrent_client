@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/marksamman/bencode"
 )
@@ -48,7 +50,7 @@ func (t *TorrentClient) buildURL() error {
 	return nil
 }
 
-func (t *TorrentClient) makeRequest() (Tracker, error) {
+func (t *TorrentClient) getPeersInfo() ([]Peer, int64, error) {
 	resp, err := http.Get(t.URL)
 	if err != nil {
 		log.Fatal("cannot build url")
@@ -62,15 +64,35 @@ func (t *TorrentClient) makeRequest() (Tracker, error) {
 	peers, err := DecodePeerInfo([]byte(decodedBody["peers"].(string)))
 
 	if err != nil {
-		return Tracker{}, err
+		log.Fatal("cannot decode peers info")
 	}
 
-	tracker := Tracker{
-		Interval: decodedBody["interval"].(int64),
-		Peers:    peers,
+	return peers, decodedBody["interval"].(int64), nil
+}
+
+func (t *TorrentClient) connect(p Peer) net.Conn {
+	conn, err := net.Dial("tcp", net.JoinHostPort(p.IP.String(), strconv.Itoa(int(p.Port))))
+	if err != nil {
+		log.Fatal("cannot connect to peer")
 	}
 
-	return tracker, nil
+	// Start handshake procedure
+	_, err = conn.Write(SerializeHandshake(t.TorrentFile.InfoHash, t.PeerID))
+	if err != nil {
+		log.Fatal("cannot send handshake to my bro peer")
+	}
+
+	answerInfoHash, answerPeerID, err := readHandshakeAnswer(conn)
+	if err != nil {
+		log.Fatal("cannot read answer to handshake")
+	}
+
+	if answerInfoHash != t.TorrentFile.InfoHash {
+		conn.Close()
+		log.Fatal("answered infoHash is not equal with original hash")
+	}
+
+	return conn
 }
 
 func CreateClient(t TorrentFile) (TorrentClient, error) {

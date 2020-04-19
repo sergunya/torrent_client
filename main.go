@@ -1,23 +1,14 @@
 package main
 
-import (
-	"fmt"
-	"log"
-)
+import "fmt"
 
 func main() {
 	path := "torrent_files/debian.torrent"
-	t, err := ProcessFile(path)
-	if err != nil {
-		fmt.Print(err)
-	} else {
-		fmt.Println(t)
-		client, err := CreateClient(t)
-		if err != nil {
-			log.Fatal(err)
-		}
+	tFile, _ := ProcessFile(path)
+	tClient, _ := CreateClient(tFile)
+	peers, interval, _ := tClient.getPeersInfo()
+	tClient.connect(peers[0])
+	fmt.Println(interval)
+	//tracker.TorrentClient.connect(tracker.Peers[0])
 
-		tracker, err := client.makeRequest()
-		fmt.Println(tracker)
-	}
 }
